@@ -10,31 +10,9 @@ import (
 	"strings"
 	"strconv"
 	"time"
-	"unsafe"
-	"io/ioutil"
 	"golang.org/x/net/html"
 )
 
-// #cgo LDFLAGS: -lmspack
-// #include <mspack.h>
-// #include <stdlib.h>
-// /* because cgo can't handle function pointers */
-// struct mscabd_cabinet *cabOpen(struct mscab_decompressor *c, char *filename)
-// {
-// 	return (*c->open)(c, filename);
-// }
-// void cabClose(struct mscab_decompressor *c, struct mscabd_cabinet *cab)
-// {
-// 	(*c->close)(c, cab);
-// }
-// int cabExtract(struct mscab_decompressor *c, struct mscabd_file *in, char *out)
-// {
-// 	return (*c->extract)(c, in, out);
-// }
-// int cabLastError(struct mscab_decompressor *c)
-// {
-// 	return (*c->last_error)(c);
-// }
 import "C"
 
 type Entry struct {
@@ -144,41 +122,9 @@ func parseMSHC(mshcname string) {
 	}
 }
 
-func parseCAB(cabname string, workdir string) {
-	c := C.mspack_create_cab_decompressor(nil)
-	if c == nil {
-		panic("mspack_create_cab_decompressor() failed (TOOD error)")
-	}
-	defer C.mspack_destroy_cab_decompressor(c)
-	ccabname := C.CString(cabname)
-	defer C.free(unsafe.Pointer(ccabname))
-	cab := C.cabOpen(c, ccabname)
-	if cab == nil {
-		panic("error opening cabinet file (TODO get error)")
-	}
-	defer C.cabClose(c, cab)
-	for cf := cab.files; cf != nil; cf = cf.next {
-		filename := C.GoString(cf.filename)
-		if e := filepath.Ext(filename); e == ".mshc" {
-			tmpfile := filepath.Join(workdir, filepath.Base(filename))
-			ctmpfile := C.CString(tmpfile)
-			err := C.cabExtract(c, cf, ctmpfile)
-			if err != C.MSPACK_ERR_OK {
-				panic("error extracting (TODO error to string)")
-			}
-			C.free(unsafe.Pointer(ctmpfile))
-			parseMSHC(tmpfile)
-		}
-	}
-}
-
 func main() {
-	workdir, err := ioutil.TempDir("", "mshc")
-	if err != nil {
-		panic(err)		// TODO
-	}
 	for _, cab := range os.Args[2:] {
-		parseCAB(cab, workdir)
+		parseMSHC(cab)
 	}
 	collectByID()
 	assignChildren()
