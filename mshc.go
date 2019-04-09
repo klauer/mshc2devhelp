@@ -106,7 +106,8 @@ func parseMSHC(mshcname string) {
 	}
 	defer z.Close()
 	for _, f := range z.File {
-		if !strings.HasPrefix(f.Name, "ic") && filepath.Ext(f.Name) != ".htm" {
+		if !strings.HasPrefix(f.Name, "ic") && filepath.Ext(f.Name) != ".htm" && filepath.Ext(f.Name) != ".html" {
+            print("Skipping", f.Name, "\n");
 			continue
 		}
 		r, err := f.Open()
