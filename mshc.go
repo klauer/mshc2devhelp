@@ -12,7 +12,7 @@ import (
 	"time"
 	"unsafe"
 	"io/ioutil"
-	"code.google.com/p/go.net/html"
+	"golang.org/x/net/html"
 )
 
 // #cgo LDFLAGS: -lmspack
